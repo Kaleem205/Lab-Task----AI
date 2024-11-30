@@ -1,0 +1,176 @@
+Ai Lab#13
+Muhammad Kaleem
+56614
+
+
+Code#1:
+
+# Importing necessary libraries
+import pandas as pd  # For handling and analyzing data
+import numpy as np  # For numerical operations
+from sklearn.model_selection import train_test_split  # For splitting the dataset
+from sklearn.neighbors import KNeighborsClassifier  # For KNN implementation using scikit-learn
+from sklearn.metrics import accuracy_score  # For calculating accuracy of models
+import matplotlib.pyplot as plt  # For visualizing results
+from scipy.stats import mode  # For finding the mode of neighbors in the custom KNN model
+
+# Custom KNN Classifier
+class K_Nearest_Neighbors_Classifier:
+    # Initialize the model with a specific value of k
+    def __init__(self, K):
+        self.K = K
+
+    # Train the model with training data
+    def fit(self, X_train, Y_train):
+        self.X_train = X_train  # Store training features
+        self.Y_train = Y_train  # Store training labels
+        self.m, self.n = X_train.shape  # Get the number of training samples and features
+
+    # Predict labels for the test dataset
+    def predict(self, X_test):
+        self.X_test = X_test  # Store test features
+        self.m_test, self.n = X_test.shape  # Get the number of test samples and features
+        Y_predict = np.zeros(self.m_test)  # Initialize an array to store predictions
+
+        # Loop through each test example
+        for i in range(self.m_test):
+            x = self.X_test[i]  # Get the current test sample
+            neighbors = self.find_neighbors(x)  # Find the k nearest neighbors
+            Y_predict[i] = mode(neighbors, keepdims=False)[0]  # Predict the most frequent class
+        return Y_predict
+
+    # Find the k nearest neighbors for a given test sample
+    def find_neighbors(self, x):
+        euclidean_distances = np.zeros(self.m)  # Array to store distances from all training samples
+
+        # Calculate the Euclidean distance between the test sample and all training samples
+        for i in range(self.m):
+            d = self.euclidean(x, self.X_train[i])  # Calculate distance
+            euclidean_distances[i] = d  # Store the distance
+
+        # Get the indices of training samples sorted by distance
+        inds = euclidean_distances.argsort()
+        Y_train_sorted = self.Y_train[inds]  # Sort training labels based on the sorted distances
+        return Y_train_sorted[:self.K]  # Return the labels of the k nearest neighbors
+
+    # Calculate the Euclidean distance between two points
+    def euclidean(self, x, x_train):
+        return np.sqrt(np.sum(np.square(x - x_train)))  # Square differences, sum them, and take the square root
+
+# Main function to execute the program
+def main():
+    # Load the dataset
+    df = pd.read_csv("/content/teleCust1000t.csv")  # Load data from CSV file
+    
+    # Extract features (all columns except the last) and target (last column)
+    X = df.iloc[:, :-1].values  # Features
+    Y = df.iloc[:, -1].values  # Target labels
+
+    # Split the dataset into training (67%) and testing (33%) sets
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=1/3, random_state=0)
+
+    # Define different values of k to test
+    k_values = [1, 3, 5, 10]
+
+    # Initialize lists to store accuracy results
+    custom_model_accuracies = []
+    sklearn_model_accuracies = []
+
+    # Loop through each k value
+    for k in k_values:
+        # Custom KNN model
+        custom_model = K_Nearest_Neighbors_Classifier(K=k)  # Create custom KNN model with current k
+        custom_model.fit(X_train, Y_train)  # Train the custom model
+        Y_pred_custom = custom_model.predict(X_test)  # Predict labels for test data
+        accuracy_custom = accuracy_score(Y_test, Y_pred_custom) * 100  # Calculate accuracy
+        custom_model_accuracies.append(accuracy_custom)  # Store accuracy
+
+        # Scikit-learn KNN model
+        sklearn_model = KNeighborsClassifier(n_neighbors=k)  # Create scikit-learn KNN model with current k
+        sklearn_model.fit(X_train, Y_train)  # Train the scikit-learn model
+        Y_pred_sklearn = sklearn_model.predict(X_test)  # Predict labels for test data
+        accuracy_sklearn = accuracy_score(Y_test, Y_pred_sklearn) * 100  # Calculate accuracy
+        sklearn_model_accuracies.append(accuracy_sklearn)  # Store accuracy
+
+        # Print the accuracies for the current k value
+        print(f"Accuracy with k={k} (Custom Model): {accuracy_custom:.2f}%")
+        print(f"Accuracy with k={k} (Scikit-Learn): {accuracy_sklearn:.2f}%")
+
+    # Visualization of accuracies for different k values
+    plt.figure(figsize=(10, 6))
+    plt.plot(k_values, custom_model_accuracies, label="Custom Model", marker='o', color='blue')  # Custom model accuracy
+    plt.plot(k_values, sklearn_model_accuracies, label="Scikit-Learn Model", marker='s', color='orange')  # Scikit-learn model accuracy
+    plt.title("Comparison of KNN Models with Varying k Values", fontsize=16)
+    plt.xlabel("k (Number of Neighbors)", fontsize=14)
+    plt.ylabel("Accuracy (%)", fontsize=14)
+    plt.legend(fontsize=12)  # Add legend for clarity
+    plt.grid(True)  # Add grid for better readability
+    plt.show()  # Display the plot
+
+# Execute the main function when the script is run
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+Code#2:
+
+# Importing necessary libraries
+import numpy as np  # For numerical computations
+import pandas as pd  # For handling datasets
+import matplotlib.pyplot as plt  # For data visualization
+from sklearn.datasets import make_blobs  # To generate synthetic datasets
+from sklearn.neighbors import KNeighborsClassifier  # KNN implementation from sklearn
+from sklearn.model_selection import train_test_split  # For splitting dataset
+from sklearn.metrics import accuracy_score  # To calculate model accuracy
+
+# Creating a synthetic dataset with 500 samples, 2 features, 4 classes, and controlled cluster distribution
+X, y = make_blobs(n_samples=500, n_features=2, centers=4, cluster_std=1.5, random_state=4)
+
+# Visualizing the generated dataset
+plt.figure(figsize=(10, 10))  # Setting figure size for better visualization
+plt.scatter(X[:, 0], X[:, 1], c=y, s=100, edgecolors='black')  # Scatter plot of data points
+plt.title("Dataset Visualization", fontsize=16)  # Adding title to the plot
+plt.show()  # Displaying the plot
+
+# Splitting the dataset into training (75%) and testing (25%) sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
+# Creating a dictionary of KNN models for different values of k
+knn_models = {
+    'k=1': KNeighborsClassifier(n_neighbors=1),  # KNN model with k=1
+    'k=3': KNeighborsClassifier(n_neighbors=3),  # KNN model with k=3
+    'k=5': KNeighborsClassifier(n_neighbors=5),  # KNN model with k=5
+    'k=10': KNeighborsClassifier(n_neighbors=10)  # KNN model with k=10
+}
+
+# Training and evaluating each model
+accuracy_results = {}  # Dictionary to store accuracy of each model
+for k, model in knn_models.items():  # Looping through each model
+    model.fit(X_train, y_train)  # Training the KNN model on the training set
+    y_pred = model.predict(X_test)  # Making predictions on the test set
+    accuracy = accuracy_score(y_test, y_pred) * 100  # Calculating accuracy as a percentage
+    accuracy_results[k] = accuracy  # Storing accuracy in the dictionary
+    print(f"Accuracy with {k}: {accuracy:.2f}%")  # Printing accuracy for each model
+
+# Visualizing predictions for k=1 and k=5
+plt.figure(figsize=(15, 5))  # Setting figure size for visualization
+subplot_index = 1  # Initializing subplot index for sequential plotting
+for k, model in knn_models.items():  # Looping through models
+    if k in ['k=1', 'k=5']:  # Only visualize results for k=1 and k=5
+        y_pred = model.predict(X_test)  # Making predictions on the test set
+        plt.subplot(1, 2, subplot_index)  # Creating subplot (1 row, 2 columns, current index)
+        plt.scatter(X_test[:, 0], X_test[:, 1], c=y_pred, marker='*', s=100, edgecolors='black')  # Scatter plot of predictions
+        plt.title(f"Predicted values with {k}", fontsize=20)  # Adding title to the plot
+        subplot_index += 1  # Incrementing subplot index for next plot
+
+plt.tight_layout()  # Adjusting spacing between plots for better readability
+plt.show()  # Displaying the plots
+
+# Comparing and printing accuracy results for all models
+print("\nAccuracy comparison:")
+for k, accuracy in accuracy_results.items():  # Looping through accuracy dictionary
+    print(f"{k}: {accuracy:.2f}%")  # Printing accuracy for each model
